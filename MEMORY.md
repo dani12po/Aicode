@@ -77,7 +77,7 @@ npm start            # Local polling mode
 - 0d86093 — "🔄 Migrate AI Code Chan bot to DeepSeek API fallback"
 - bf0de65 — "📸 Add CLI environment screenshots"
 
-**Live Bot Handle:** @AICodeChanBot (Telegram) — active, responding to /code, /debug, /review, /explain commands
+**Live Bot Handle:** @aicodechan_bot (Telegram) — active, responding to /code, /debug, /review, /explain commands
 
 ## Learned Preferences
 
