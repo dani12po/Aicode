@@ -1,0 +1,32 @@
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+API_KEYS.md
+.openclaw/workspace-state.json
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Logs
+*.log
+npm-debug.log*
+trading-log.json
+
+# State & Cache
+.solana/
+.cache/
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build outputs
+dist/
+build/
