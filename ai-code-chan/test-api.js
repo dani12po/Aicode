@@ -1,9 +1,19 @@
 #!/usr/bin/env node
+import dotenv from "dotenv";
 import Anthropic from "@anthropic-ai/sdk";
 
-const client = new Anthropic({
+dotenv.config();
+
+const clientConfig = {
   apiKey: process.env.CLAUDE_API_KEY,
-});
+};
+
+if (process.env.API_BASE_URL) {
+  clientConfig.baseURL = process.env.API_BASE_URL;
+  clientConfig.defaultHeaders = { "anthropic-version": "2023-06-01" };
+}
+
+const client = new Anthropic(clientConfig);
 
 const testCases = [
   {

@@ -9,27 +9,60 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
 const PORT = process.env.PORT || 3000;
+const API_BASE_URL = process.env.API_BASE_URL;
 
-if (!BOT_TOKEN || !CLAUDE_API_KEY) {
-  console.error("Missing BOT_TOKEN or CLAUDE_API_KEY");
+if (!BOT_TOKEN) {
+  console.error("Missing BOT_TOKEN");
   process.exit(1);
 }
 
+if (!CLAUDE_API_KEY) {
+  console.error("Missing CLAUDE_API_KEY");
+  process.exit(1);
+}
+
+console.log(`[DEBUG] Bot Token: ${BOT_TOKEN.slice(0, 20)}...`);
+console.log(`[DEBUG] API Key: ${CLAUDE_API_KEY.slice(0, 20)}...`);
+if (API_BASE_URL) console.log(`[DEBUG] API Base URL: ${API_BASE_URL}`);
+
 const bot = new Telegraf(BOT_TOKEN);
-const client = new Anthropic({ apiKey: CLAUDE_API_KEY });
+
+// Support both Anthropic direct + agent-router
+let client;
+const isAgentRouter = CLAUDE_API_KEY?.startsWith("sk-") && API_BASE_URL;
+if (isAgentRouter) {
+  // Agent-router mode
+  client = new Anthropic({
+    apiKey: CLAUDE_API_KEY,
+    baseURL: API_BASE_URL,
+    defaultHeaders: { "anthropic-version": "2023-06-01" }
+  });
+} else {
+  // Anthropic direct
+  client = new Anthropic({ apiKey: CLAUDE_API_KEY });
+}
 
 // Session middleware untuk track context per user
 bot.use(session());
 
 // Helper: Chat dengan Claude
 async function askClaude(prompt, systemPrompt) {
-  const message = await client.messages.create({
-    model: "claude-opus-4-8",
-    max_tokens: 2000,
-    system: systemPrompt,
-    messages: [{ role: "user", content: prompt }],
-  });
-  return message.content[0].type === "text" ? message.content[0].text : "";
+  try {
+    const message = await client.messages.create({
+      model: "claude-opus-4-8",
+      max_tokens: 2000,
+      system: systemPrompt,
+      messages: [{ role: "user", content: prompt }],
+    });
+    return message.content[0].type === "text" ? message.content[0].text : "";
+  } catch (error) {
+    console.error(`[API Error] ${error.message}`);
+    if (error.status === 401) {
+      console.warn("[FALLBACK] Using mock response - API key may be invalid");
+      return `[Mock Response - API Key Issue]\n\nYour API key appears to be invalid (401 Unauthorized).\n\nPlease:\n1. Check your CLAUDE_API_KEY in .env\n2. Get a valid key from: https://console.anthropic.com/account/keys\n3. Restart the bot with: npm start`;
+    }
+    throw error;
+  }
 }
 
 // /start
