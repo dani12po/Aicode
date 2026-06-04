@@ -1,0 +1,13 @@
+# Railway.toml - Configuration for Railway deployment
+# https://railway.app
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm start"
+healthCheckPath = "/"
+healthCheckTimeout = 30
+
+[environments.production]
+PORT = 3000
