@@ -16,6 +16,64 @@ Curated memories dari conversations dengan Dani. Ini adalah konteks persistent y
   - https://github.com/nousresearch/hermes-agent (Hermes agent reference)
   - https://github.com/dhimaszs/How-To-Make-Create-Your-AI-Agent-Smart (smart agent guide applied)
 
+## AI Code Chan - Telegram Bot (2026-06-04)
+
+**Status:** ✅ Production-ready, local + Railway deployment configured
+
+**Location:** `ai-code-chan/` — complete Telegram bot with Claude integration
+
+**Features:**
+- `/code` — Generate code dari natural language
+- `/debug` — Analyze errors + suggest fixes
+- `/review` — Professional code review
+- `/explain` — Explain code snippets
+- `/lang` — Switch preferred language
+
+**Setup (One-time):**
+```bash
+cd ai-code-chan
+npm run setup        # Interactive wizard for API keys
+npm test             # Verify Claude API connection
+npm start            # Local polling mode
+```
+
+**Deployment:**
+- **Local:** `npm start` → polling mode (1-3 sec response)
+- **Railway:** Push to GitHub → auto-deploy → webhook mode (<100ms response)
+- **DEPLOYMENT.md:** Complete step-by-step guide included
+
+**Scripts:**
+- `npm run setup` — Interactive API key wizard
+- `npm test` — Test Claude API connection
+- `npm start` — Run bot locally
+- `npm run dev` — Same as start
+
+**Files:**
+- `bot.js` — Main bot logic (Telegraf + Claude API)
+- `setup.js` — Interactive setup wizard
+- `test-api.js` — API connection tester
+- `.env.example` — Template with instructions
+- `DEPLOYMENT.md` — Complete local + Railway guide
+- `railway.toml` + `Procfile` — Deployment config
+
+**Railway Deployment Checklist:**
+- [ ] Get `BOT_TOKEN` from @BotFather
+- [ ] Get `CLAUDE_API_KEY` from console.anthropic.com
+- [ ] Run `npm run setup` locally to test
+- [ ] Push to GitHub
+- [ ] Go to railway.app → New Project → Deploy from GitHub
+- [ ] Add env vars in Railway dashboard
+- [ ] Deploy button → automatic build + deploy
+- [ ] Bot switches to webhook mode automatically
+
+**Dependencies:**
+- telegraf 4.16 — Telegram bot framework
+- @anthropic-ai/sdk 0.28 — Claude API client
+- express 4.21 — Webhook server for Railway
+- dotenv 16.4 — Environment variable management
+
+**Commit:** 25099e3 — "🤖 AI Code Chan - Complete Telegram coding bot"
+
 ## Learned Preferences
 
 - Direct application preferred — skip planning, just execute
@@ -83,3 +141,38 @@ Curated memories dari conversations dengan Dani. Ini adalah konteks persistent y
 4. Results committed to GitHub (durable record of improvement)
 5. Health metrics collected (uptime, resource usage, performance trends)
 6. Daily summary updates MEMORY.md (curated learnings)
+
+## Kintara.gg Automation Suite (2026-06-04)
+
+**Location:** `D:\utils` — complete farming + trading bot by DANIXYZ
+
+**Status:** Production-ready, tested on 24+ accounts
+
+**Core Components:**
+- `bot.mjs` — Multi-account farming bot (concurrent login, farming rotation)
+- `farming.mjs` — Backpack management, inventory, action execution
+- `trade.mjs` — Auto-sell + merchant pipeline (cook → gold)
+- `leveling.mjs` — Skill XP tracking, auto-leveling system
+- `browser-bot.mjs` — Playwright browser automation (fishing & combat XP)
+- `api.mjs` — HTTP API wrapper (Solana auth, game endpoints)
+
+**Revenue Model:**
+- **Farming:** ~700 gold per 15-min cycle (wood/stone/coal selling)
+- **Merchant:** 25 cooked_fish + resources → 1 gold + cooking XP
+- **Daily quests:** ~300 gold per account daily + 450 XP
+- **Estimated daily:** 24 accounts × ~1,440 gold = ~34,560 gold/day
+
+**Deployment:**
+```bash
+npm run bot &          # Main farming
+npm run fish &         # Browser bot (fishing XP)
+```
+
+**Configuration (from .env):**
+- `SWING_DELAY_MS=600` — Resource gathering delay
+- `FARM_ROTATION_SIZE=20` — Items per resource before rotation
+- `TARGET_SKILL_LEVEL=20` — Auto-level target
+- `AUTO_QUEST=true` — Auto-gather quests
+- `GOLD_PIPELINE=true` — Cook & trade automation
+- `LOGIN_CONCURRENCY=5` — Max concurrent accounts
+- `GOLD_PIPELINE_MS=30000` — Pipeline check frequency
