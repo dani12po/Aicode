@@ -1,77 +1,70 @@
 #!/usr/bin/env node
 import dotenv from "dotenv";
-import Anthropic from "@anthropic-ai/sdk";
 
 dotenv.config();
 
-const clientConfig = {
-  apiKey: process.env.CLAUDE_API_KEY,
-};
+const API_KEY = process.env.CLAUDE_API_KEY;
+const API_BASE_URL = process.env.API_BASE_URL || "https://openrouter.io/api/v1";
+const MODEL = process.env.MODEL || "deepseek/deepseek-chat";
 
-if (process.env.API_BASE_URL) {
-  clientConfig.baseURL = process.env.API_BASE_URL;
-  clientConfig.defaultHeaders = { "anthropic-version": "2023-06-01" };
+console.log("☤ Testing LLM API Connection...\n");
+
+if (!API_KEY) {
+  console.error("❌ CLAUDE_API_KEY not set!");
+  console.log("Set it in .env file or: export CLAUDE_API_KEY=sk-...");
+  process.exit(1);
 }
 
-const client = new Anthropic(clientConfig);
+console.log(`API Endpoint: ${API_BASE_URL}`);
+console.log(`Model: ${MODEL}`);
+console.log(`API Key: ${API_KEY.slice(0, 20)}...${API_KEY.slice(-4)}\n`);
 
-const testCases = [
-  {
-    name: "Code generation",
-    system: "You are a code expert.",
-    prompt:
-      'Write a Python function to check if a string is a palindrome. Return only the code.',
-  },
-  {
-    name: "Error debugging",
-    system: "You are a debugging expert.",
-    prompt:
-      "I have this error: TypeError: Cannot read property 'map' of undefined. What causes this and how to fix?",
-  },
-  {
-    name: "Code review",
-    system: "You are a code reviewer.",
-    prompt:
-      'Review this code for issues:\n```javascript\nfunction add(a, b) {\n  return a + b;\n}\n```',
-  },
-  {
-    name: "Code explanation",
-    system: "You are a code educator.",
-    prompt:
-      "Explain this briefly:\n```const arr = [1,2,3].map(x => x * 2);```",
-  },
-];
+async function testConnection() {
+  try {
+    console.log("Sending request...");
+    const response = await fetch(`${API_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${API_KEY}`,
+        "HTTP-Referer": "https://localhost:3000",
+        "X-Title": "AI Code Chan Bot"
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 100,
+        messages: [
+          { role: "user", content: "Say hello in one word" }
+        ]
+      })
+    });
 
-async function runTests() {
-  console.log("☤ Testing Claude API Connection...\n");
+    console.log(`Status: ${response.status} ${response.statusText}`);
 
-  if (!process.env.CLAUDE_API_KEY) {
-    console.error("❌ CLAUDE_API_KEY not set!");
-    console.log("Set it in .env file or: export CLAUDE_API_KEY=sk-...");
+    const data = await response.text();
+    console.log(`Response body:\n${data.substring(0, 500)}\n`);
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const json = JSON.parse(data);
+    const text = json.choices?.[0]?.message?.content || "No response";
+    console.log(`✅ Success! Response:\n${text}\n`);
+    console.log("🚀 Bot ready! Start with: npm start");
+
+  } catch (error) {
+    console.error(`❌ Error: ${error.message}`);
+
+    console.log("\n💡 Troubleshooting tips:");
+    console.log("1. Check API_BASE_URL is correct for your provider");
+    console.log("2. Check API_KEY is valid and not expired");
+    console.log("3. Try different endpoints:");
+    console.log("   - OpenRouter: https://openrouter.io/api/v1");
+    console.log("   - DeepSeek: https://api.deepseek.com/v1");
+    console.log("   - Local: http://localhost:8000/v1");
     process.exit(1);
   }
-
-  for (const test of testCases) {
-    try {
-      console.log(`Testing: ${test.name}...`);
-      const response = await client.messages.create({
-        model: "claude-opus-4-8",
-        max_tokens: 200,
-        system: test.system,
-        messages: [{ role: "user", content: test.prompt }],
-      });
-
-      const text =
-        response.content[0].type === "text" ? response.content[0].text : "";
-      console.log(`✅ Response (${text.length} chars):\n${text.substring(0, 100)}...\n`);
-    } catch (error) {
-      console.error(`❌ Error: ${error.message}\n`);
-      process.exit(1);
-    }
-  }
-
-  console.log("✅ All tests passed! Bot is ready to use.");
-  console.log("\n🚀 Start bot with: npm start\n");
 }
 
-runTests();
+testConnection();

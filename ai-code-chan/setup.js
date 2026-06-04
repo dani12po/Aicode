@@ -22,24 +22,40 @@ async function main() {
   const botToken = await question(
     '1️⃣  Telegram BOT_TOKEN (dari @BotFather): '
   );
-  const claudeKey = await question(
-    '2️⃣  Anthropic CLAUDE_API_KEY (dari console.anthropic.com): '
-  );
-  const port = await question("3️⃣  PORT (default: 3000): ") || "3000";
+
+  console.log("\n📌 Pilih API Provider:");
+  console.log("  1. Anthropic Direct (console.anthropic.com)");
+  console.log("  2. Agent-router (agent router service)");
+  const providerChoice = await question("Pilih [1 atau 2, default: 1]: ") || "1";
+
+  let claudeKey, apiBaseUrl = "";
+
+  if (providerChoice === "2") {
+    claudeKey = await question("2️⃣  Agent-router API Key (sk-...): ");
+    apiBaseUrl = await question("3️⃣  Agent-router Base URL [default: https://api.agentrouter.ai/v1]: ");
+    if (!apiBaseUrl) apiBaseUrl = "https://api.agentrouter.ai/v1";
+  } else {
+    claudeKey = await question("2️⃣  Anthropic API Key (dari console.anthropic.com): ");
+  }
 
   if (!botToken || !claudeKey) {
     console.error("❌ BOT_TOKEN dan CLAUDE_API_KEY wajib!");
     process.exit(1);
   }
 
-  const envContent = `# Telegram Bot Token dari @BotFather
+  let envContent = `# Telegram Bot Token dari @BotFather
 BOT_TOKEN=${botToken}
 
-# Anthropic API Key dari https://console.anthropic.com/account/keys
-CLAUDE_API_KEY=${claudeKey}
+# Claude API Key
+CLAUDE_API_KEY=${claudeKey}`;
 
-# Port untuk development (Railway auto-override)
-PORT=${port}
+  if (apiBaseUrl) {
+    envContent += `\n\n# Agent-router Base URL
+API_BASE_URL=${apiBaseUrl}`;
+  }
+
+  envContent += `\n\n# Port untuk development (Railway auto-override)
+PORT=3000
 
 # Webhook URL (auto-set saat deploy Railway)
 WEBHOOK_URL=

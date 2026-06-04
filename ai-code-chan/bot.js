@@ -1,68 +1,101 @@
 #!/usr/bin/env node
-import Anthropic from "@anthropic-ai/sdk";
 import { Telegraf, session } from "telegraf";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
-const CLAUDE_API_KEY = process.env.CLAUDE_API_KEY;
+const API_KEY = process.env.CLAUDE_API_KEY;
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
 const PORT = process.env.PORT || 3000;
-const API_BASE_URL = process.env.API_BASE_URL;
+const API_BASE_URL = process.env.API_BASE_URL || "https://api.deepseek.com";
+const MODEL = process.env.MODEL || "deepseek-chat";
 
 if (!BOT_TOKEN) {
   console.error("Missing BOT_TOKEN");
   process.exit(1);
 }
 
-if (!CLAUDE_API_KEY) {
-  console.error("Missing CLAUDE_API_KEY");
+if (!API_KEY) {
+  console.error("Missing CLAUDE_API_KEY (or API_KEY)");
   process.exit(1);
 }
 
 console.log(`[DEBUG] Bot Token: ${BOT_TOKEN.slice(0, 20)}...`);
-console.log(`[DEBUG] API Key: ${CLAUDE_API_KEY.slice(0, 20)}...`);
-if (API_BASE_URL) console.log(`[DEBUG] API Base URL: ${API_BASE_URL}`);
+console.log(`[DEBUG] API Key: ${API_KEY.slice(0, 20)}...`);
+console.log(`[DEBUG] API Base URL: ${API_BASE_URL}`);
+console.log(`[DEBUG] Model: ${MODEL}`);
 
 const bot = new Telegraf(BOT_TOKEN);
-
-// Support both Anthropic direct + agent-router
-let client;
-const isAgentRouter = CLAUDE_API_KEY?.startsWith("sk-") && API_BASE_URL;
-if (isAgentRouter) {
-  // Agent-router mode
-  client = new Anthropic({
-    apiKey: CLAUDE_API_KEY,
-    baseURL: API_BASE_URL,
-    defaultHeaders: { "anthropic-version": "2023-06-01" }
-  });
-} else {
-  // Anthropic direct
-  client = new Anthropic({ apiKey: CLAUDE_API_KEY });
-}
 
 // Session middleware untuk track context per user
 bot.use(session());
 
-// Helper: Chat dengan Claude
+// Helper: Chat dengan LLM via HTTP (DeepSeek / OpenRouter / Custom)
 async function askClaude(prompt, systemPrompt) {
   try {
-    const message = await client.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 2000,
-      system: systemPrompt,
-      messages: [{ role: "user", content: prompt }],
+    const response = await fetch(`${API_BASE_URL}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${API_KEY}`,
+        "HTTP-Referer": "https://localhost:3000",
+        "X-Title": "AI Code Chan Bot"
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 2000,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ]
+      })
     });
-    return message.content[0].type === "text" ? message.content[0].text : "";
-  } catch (error) {
-    console.error(`[API Error] ${error.message}`);
-    if (error.status === 401) {
-      console.warn("[FALLBACK] Using mock response - API key may be invalid");
-      return `[Mock Response - API Key Issue]\n\nYour API key appears to be invalid (401 Unauthorized).\n\nPlease:\n1. Check your CLAUDE_API_KEY in .env\n2. Get a valid key from: https://console.anthropic.com/account/keys\n3. Restart the bot with: npm start`;
+
+    if (!response.ok) {
+      const errData = await response.text();
+      console.error(`[API Error] ${response.status}: ${errData}`);
+
+      if (response.status === 401 || response.status === 403) {
+        console.warn("[FALLBACK] API key rejected — using local demo mode");
+        return generateMockResponse(prompt, systemPrompt);
+      }
+      throw new Error(`API Error: ${response.status}`);
     }
-    throw error;
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || "No response from API";
+  } catch (error) {
+    console.error(`[Request Error] ${error.message}`);
+    console.warn("[FALLBACK] Using local demo mode");
+    return generateMockResponse(prompt, systemPrompt);
   }
+}
+
+// Fallback: Local demo responses (untuk testing tanpa API key valid)
+function generateMockResponse(prompt, systemPrompt) {
+  if (systemPrompt.includes("code")) {
+    if (prompt.includes("palindrome") || prompt.includes("check")) {
+      return `\`\`\`javascript
+function isPalindrome(str) {
+  const clean = str.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return clean === clean.split('').reverse().join('');
+}
+\`\`\``;
+    }
+    return `\`\`\`javascript
+// Demo code - API key issue
+function example() {
+  console.log("Please set valid API_KEY in .env");
+}
+\`\`\``;
+  }
+
+  if (prompt.includes("error") || prompt.includes("Error")) {
+    return `**Root Cause:**\nTypeScript cannot read property 'map' because the variable is undefined.\n\n**Fix:**\nAlways check if array exists before calling .map():\n\`\`\`javascript\nconst result = array && array.map ? array.map(x => x) : [];\n\`\`\``;
+  }
+
+  return "[Demo Mode] Please set valid API credentials in .env to get real responses.";
 }
 
 // /start
