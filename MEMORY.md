@@ -18,9 +18,9 @@ Curated memories dari conversations dengan Dani. Ini adalah konteks persistent y
 
 ## AI Code Chan - Telegram Bot (2026-06-04)
 
-**Status:** ✅ Production-ready, local + Railway deployment configured
+**Status:** ✅ **ACTIVE in production** — Migrated to DeepSeek API (fallback), Telegram bot live + responding
 
-**Location:** `ai-code-chan/` — complete Telegram bot with Claude integration
+**Location:** `ai-code-chan/` — complete Telegram bot with Claude integration (fallback: DeepSeek-V4-Flash)
 
 **Features:**
 - `/code` — Generate code dari natural language
@@ -72,7 +72,12 @@ npm start            # Local polling mode
 - express 4.21 — Webhook server for Railway
 - dotenv 16.4 — Environment variable management
 
-**Commit:** 25099e3 — "🤖 AI Code Chan - Complete Telegram coding bot"
+**Commits:** 
+- 25099e3 — "🤖 AI Code Chan - Complete Telegram coding bot"
+- 0d86093 — "🔄 Migrate AI Code Chan bot to DeepSeek API fallback"
+- bf0de65 — "📸 Add CLI environment screenshots"
+
+**Live Bot Handle:** @AICodeChanBot (Telegram) — active, responding to /code, /debug, /review, /explain commands
 
 ## Learned Preferences
 
